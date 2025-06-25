@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mall Express</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #fff;
+    }
+    header {
+      background: url('cover.jpg') no-repeat center center;
+      background-size: cover;
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    nav {
+      text-align: center;
+      margin-top: 20px;
+    }
+    nav button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #ffcc00;
+      border: none;
+      cursor: pointer;
+    }
+    #cartBtn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background-color: red;
+      color: white;
+      padding: 10px;
+      border-radius: 10px;
+      z-index: 1000;
+    }
+    #orderBtn {
+      background-color: green;
+      color: white;
+      font-size: 18px;
+      padding: 10px 20px;
+      margin: 20px auto;
+      display: block;
+    }
+    section {
+      display: none;
+      padding: 20px;
+    }
+    .active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <!-- صورة الكوفر -->
+  </header>
+
+  <div id="cartBtn">السلة (0) - 0 ج</div>
+  <button id="orderBtn">اطلب الآن</button>
+
+  <nav>
+    <button onclick="showSection('products')">قائمة المنتجات والطلبات</button>
+    <button onclick="showSection('locations')">اللوكيشن والعناوين</button>
+    <button onclick="showSection('contact')">أرقام التواصل والشكاوي</button>
+  </nav>
+
+  <section id="products" class="active">
+    <h2>قائمة المنتجات</h2>
+    <div id="productList"></div>
+  </section>
+
+  <section id="locations">
+    <h2>اللوكيشن والعناوين</h2>
+    <p>فرع 1: القاهرة - مدينة نصر - شارع ....</p>
+    <p>فرع 2: الجيزة - شارع ....</p>
+  </section>
+
+  <section id="contact">
+    <h2>أرقام التواصل والشكاوي</h2>
+    <p>واتساب: 01234567890</p>
+    <p>هاتف: 01111111111</p>
+  </section>
+
+  <section id="invoice" style="display:none">
+    <h2>الفاتورة</h2>
+    <div id="invoiceDetails"></div>
+    <input type="text" id="customerName" placeholder="الاسم">
+    <input type="text" id="customerPhone" placeholder="رقم الهاتف">
+    <input type="text" id="customerAddress" placeholder="العنوان">
+    <button id="confirmOrder" disabled>تأكيد الطلب</button>
+    <button onclick="sendToWhatsApp()" style="background:red;color:white;margin-top:10px">إرسال الفاتورة على واتساب</button>
+  </section>
+
+  <script>
+    const products = [
+      { name: "منتج 1", priceBefore: 100, priceAfter: 80, image: "https://via.placeholder.com/150" },
+      { name: "منتج 2", priceBefore: 120, priceAfter: 90, image: "https://via.placeholder.com/150" },
+    ];
+
+    let cart = [];
+
+    function showSection(id) {
+      document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function renderProducts() {
+      const container = document.getElementById('productList');
+      products.forEach((p, index) => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <img src="${p.image}" width="100"><br>
+          <strong>${p.name}</strong><br>
+          <del>${p.priceBefore} ج</del> <span>${p.priceAfter} ج</span><br>
+          <button onclick="addToCart(${index})">أضف للسلة</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function addToCart(index) {
+      cart.push(products[index]);
+      updateCartBtn();
+    }
+
+    function updateCartBtn() {
+      document.getElementById('cartBtn').innerText = `السلة (${cart.length}) - ${cart.reduce((a, c) => a + c.priceAfter, 0)} ج`;
+    }
+
+    document.getElementById('orderBtn').onclick = function () {
+      if (cart.length === 0) return alert("السلة فارغة");
+      showSection('invoice');
+      document.getElementById('invoiceDetails').innerHTML = cart.map(p => `<p>${p.name} - ${p.priceAfter} ج</p>`).join('') + `<hr><p><strong>الإجمالي: ${cart.reduce((a, c) => a + c.priceAfter, 0)} ج</strong></p>`;
+    }
+
+    ['customerName', 'customerPhone', 'customerAddress'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        const name = document.getElementById('customerName').value;
+        const phone = document.getElementById('customerPhone').value;
+        const address = document.getElementById('customerAddress').value;
+        document.getElementById('confirmOrder').disabled = !(name && phone && address);
+      });
+    });
+
+    document.getElementById('confirmOrder').onclick = () => {
+      alert("تم تأكيد الطلب! يرجى إرسال الفاتورة على واتساب.");
+    }
+
+    function sendToWhatsApp() {
+      const name = document.getElementById('customerName').value;
+      const phone = document.getElementById('customerPhone').value;
+      const address = document.getElementById('customerAddress').value;
+      const details = cart.map(p => `${p.name} - ${p.priceAfter} ج`).join('\n');
+      const total = cart.reduce((a, c) => a + c.priceAfter, 0);
+      const message = `فاتورة Mall Express:\n${details}\nالإجمالي: ${total} ج\nالاسم: ${name}\nرقم الهاتف: ${phone}\nالعنوان: ${address}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`);
+    }
+
+    renderProducts();
+  </script>
+</body>
+</html>
